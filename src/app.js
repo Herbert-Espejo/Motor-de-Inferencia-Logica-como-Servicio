@@ -8,12 +8,12 @@ const pl = require('tau-prolog');
 const fs = require('fs').promises;
 const path = require('path');
 
+const ROOT_DIR = path.join(__dirname, '..');
+const KB_PATH = path.join(ROOT_DIR, 'data', 'knowledge-base.pl');
+const PUBLIC_DIR = path.join(ROOT_DIR, 'public');
+
 const app = express();
 app.use(express.json());
-
-const KB_PATH = path.join(__dirname, 'knowledge_base.pl');
-const PUBLIC_DIR = path.join(__dirname, 'public');
-
 app.use(express.static(PUBLIC_DIR));
 
 const SERVICE_INFO = {
@@ -98,7 +98,7 @@ const termToJS = (term) => {
 /**
  * Carga la base de conocimiento y ejecuta una consulta.
  * Retorna una Promise que resuelve a un array de respuestas.
- * 
+ *
  * @param {string} kbSource  - Código Prolog de la base de conocimiento
  * @param {string} queryStr  - Consulta Prolog normalizada
  * @param {number} maxSols   - Máximo de soluciones a recuperar
@@ -138,7 +138,7 @@ const runPrologQuery = (kbSource, queryStr, maxSols = 20) => {
                   }
 
                   if (answers.length < maxSols) {
-                    getNextAnswer(); // Recursión: pedir siguiente solución
+                    getNextAnswer();
                   } else {
                     resolve(answers);
                   }
@@ -177,7 +177,6 @@ const runPrologQuery = (kbSource, queryStr, maxSols = 20) => {
 app.post('/query', async (req, res) => {
   const { query, max_solutions } = req.body;
 
-  // Validación de entrada
   if (!query || typeof query !== 'string') {
     return res.status(400).json(
       buildErrorResponse('El campo "query" es requerido y debe ser una cadena de texto.')
@@ -189,18 +188,11 @@ app.post('/query', async (req, res) => {
     : 20;
 
   try {
-    // 1. Cargar base de conocimiento desde disco (asíncrono)
     const kbSource = await fs.readFile(KB_PATH, 'utf8');
-
-    // 2. Normalizar consulta (funcional)
     const normalizedQuery = normalizeQuery(query);
-
-    // 3. Ejecutar motor de inferencia (lógico + asíncrono)
     const answers = await runPrologQuery(kbSource, normalizedQuery, maxSols);
 
-    // 4. Retornar respuesta JSON
     return res.json(buildSuccessResponse(normalizedQuery, answers));
-
   } catch (err) {
     console.error('[/query error]', err.message);
     return res.status(500).json(
@@ -216,10 +208,9 @@ app.get('/facts', async (req, res) => {
   try {
     const kbSource = await fs.readFile(KB_PATH, 'utf8');
 
-    // Extraer líneas que son hechos (sin :-)
     const facts = kbSource
       .split('\n')
-      .filter(line => {
+      .filter((line) => {
         const trimmed = line.trim();
         return (
           trimmed.length > 0 &&
@@ -228,7 +219,7 @@ app.get('/facts', async (req, res) => {
           trimmed.endsWith('.')
         );
       })
-      .map(line => line.trim());
+      .map((line) => line.trim());
 
     return res.json({ status: 'ok', count: facts.length, facts });
   } catch (err) {
@@ -255,18 +246,7 @@ app.get('/api', (req, res) => {
   res.json(SERVICE_INFO);
 });
 
-// ============================================================
-// INICIO DEL SERVIDOR
-// ============================================================
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`\n🚀 Motor de Inferencia Lógica ejecutándose en http://localhost:${PORT}`);
-  console.log(`   Motor: Tau Prolog`);
-  console.log(`   Base de conocimiento: ${KB_PATH}`);
-  console.log(`   Endpoints disponibles:`);
-  console.log(`     GET  http://localhost:${PORT}/`);
-  console.log(`     GET  http://localhost:${PORT}/api`);
-  console.log(`     POST http://localhost:${PORT}/query`);
-  console.log(`     GET  http://localhost:${PORT}/facts`);
-  console.log(`     GET  http://localhost:${PORT}/health\n`);
-});
+module.exports = {
+  app,
+  KB_PATH,
+};
