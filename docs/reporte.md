@@ -4,134 +4,23 @@
 **Documentación Técnica del Proyecto**
 
 **Materia:** Teoría de Lenguajes de Programación  
-**Fecha:** Mayo 2025
+**Fecha:** Mayo 2026
 
 ---
 
-## 1. Instrucciones de Instalación Local
-A continuación se describen los pasos necesarios para instalar y ejecutar el servicio en un entorno local.
+## 1. Introducción
 
-### 1.1 Requisitos Previos
-Antes de comenzar, asegúrese de contar con el siguiente software instalado en su sistema:
-* **Node.js v18** o superior — [https://nodejs.org](https://nodejs.org)
-* **npm v9** o superior (incluido con Node.js)
-* **Git** (opcional, para clonar el repositorio)
-* **Terminal o línea de comandos** (PowerShell, Bash, Zsh)
+El presente reporte técnico documenta el diseño, la arquitectura y la implementación del proyecto "Motor de Inferencia Lógica como Servicio". Este sistema tiene como objetivo principal exponer las capacidades de deducción de un motor Prolog a través de una API RESTful moderna, permitiendo a clientes externos realizar consultas lógicas sobre una base de conocimiento predefinida.
 
-### 1.2 Obtención del Proyecto
-Descargue o clone el repositorio del proyecto:
-```bash
-git clone <url-del-repositorio>
-cd motor-inferencia-logica
-```
-O bien, si recibió el proyecto como archivo comprimido, extráigalo y navegue a la carpeta raíz del proyecto.
-
-### 1.3 Instalación de Dependencias
-Ejecute el siguiente comando en la raíz del proyecto para instalar todas las dependencias necesarias:
-```bash
-npm install
-```
-Esto instalará automáticamente las siguientes bibliotecas definidas en `package.json`:
-
-| Paquete | Versión | Descripción |
-| :--- | :--- | :--- |
-| **express** | `^4.18.2` | Framework HTTP para el servidor REST |
-| **tau-prolog** | `^0.3.2` | Intérprete de Prolog en JavaScript |
-
-### 1.4 Estructura del Proyecto
-Una vez instaladas las dependencias, el proyecto tendrá la siguiente estructura:
-```text
-motor-inferencia-logica/
-├── index.js              <- Servidor Express + Motor de inferencia
-├── knowledge_base.pl     <- Base de conocimiento en Prolog
-├── package.json          <- Configuración del proyecto y dependencias
-└── node_modules/         <- Dependencias instaladas (generado por npm)
-```
+El proyecto surge de la necesidad de evaluar reglas de negocio complejas —específicamente enfocadas en el análisis de contratos y la aplicación de penalizaciones— separando la declaración de la lógica (qué es verdad) de la capa de transporte y enrutamiento (cómo se reciben y responden las peticiones). Al encapsular Prolog dentro de un servidor Node.js, se logra un servicio web interoperable que expone el poder de la programación lógica a cualquier aplicación capaz de consumir HTTP y JSON.
 
 ---
 
-## 2. Instrucciones de Ejecución
+## 2. Paradigmas de Programación Utilizados
 
-### 2.1 Iniciar el Servidor
-Para iniciar el servidor en modo producción, ejecute:
-```bash
-npm start
-```
-Para desarrollo con reinicio automático al guardar cambios (Node.js v18+):
-
-```bash
-npm run dev
-```
-Una vez iniciado, el servidor mostrará en consola:
-> 🚀 Motor de Inferencia ejecutándose en `http://localhost:3000`
-
-### 2.2 Verificar el Estado del Servicio
-Abra un navegador o cliente HTTP (como Postman) y visite:
-```http
-GET http://localhost:3000/health
-```
-
-**Respuesta esperada:**
-```json
-{
-  "status": "ok", 
-  "service": "Motor de Inferencia Lógica", 
-  "engine": "Tau Prolog" 
-}
-```
-
-### 2.3 Consultar la Base de Conocimiento
-El endpoint principal acepta consultas Prolog mediante POST:
-```http
-POST http://localhost:3000/query
-Content-Type: application/json
-```
-**Cuerpo de la petición:**
-```json
-{
-  "query": "penalty_applicable(X)." 
-}
-```
-
-**Respuesta del motor de inferencia:**
-```json
-{
-  "status": "ok", 
-  "query": "penalty_applicable(X).",
-  "satisfiable": true,
-  "count": 2,
-  "answers": [
-    { "X": "contract1" }, 
-    { "X": "contract3" }
-  ] 
-}
-```
-
-### 2.4 Ejemplos de Consultas Disponibles
-Las siguientes consultas pueden ejecutarse sobre la base de conocimiento incluida:
-
-| Consulta | Descripción |
-| :--- | :--- |
-| `penalty_applicable(contract1).` | ¿Se aplica penalización a contract1? |
-| `penalty_applicable(X).` | ¿A cuáles contratos aplica penalización? |
-| `at_risk(X).` | Contratos activos con incumplimiento |
-| `valid_contract(X).` | Contratos activos sin incumplimiento |
-| `client_penalized(X).` | Clientes con penalización aplicable |
-| `applicable_penalty_amount(X, Y).` | Contrato X tiene penalización de $Y |
-| `same_type(contract1, X).` | Contratos del mismo tipo que contract1 |
-
-### 2.5 Otros Endpoints
-* `GET /` — Documentación de la API con ejemplos de consultas
-* `GET /facts` — Lista todos los hechos cargados en la base de conocimiento
-* `GET /health` — Verificación del estado del servicio
-* `POST /query` — Ejecuta una consulta Prolog (endpoint principal)
-
----
-
-## 3. Paradigmas de Programación Utilizados
 El proyecto integra tres paradigmas de programación fundamentales, cada uno cumpliendo un rol específico en la arquitectura del sistema.
 
-### 3.1 Programación Lógica (Prolog / Tau Prolog)
+### 2.1 Programación Lógica (Prolog / Tau Prolog)
 El paradigma de programación lógica es el núcleo del sistema. En lugar de describir cómo resolver un problema paso a paso, se declaran hechos y reglas que describen las relaciones del dominio, y el motor de inferencia determina automáticamente las conclusiones.
 
 **Rol en el sistema**
@@ -154,7 +43,7 @@ penalty_applicable(Contract) :-
     breach_reported(Contract).
 ```
 
-### 3.2 Programación Funcional (JavaScript)
+### 2.2 Programación Funcional (JavaScript)
 El paradigma funcional se aplica en la capa de transformación de datos del servidor Node.js. Se privilegia el uso de funciones puras, inmutabilidad y composición para el manejo de la entrada y salida del sistema.
 
 **Rol en el sistema**
@@ -175,7 +64,7 @@ const normalizeQuery = (raw) => {
 };
 ```
 
-### 3.3 Programación Asíncrona (Node.js / async-await)
+### 2.3 Programación Asíncrona (Node.js / async-await)
 El modelo de ejecución de Node.js, basado en un event loop de un solo hilo con I/O no bloqueante, es aprovechado para manejar múltiples solicitudes concurrentes sin bloquear el servidor.
 
 **Rol en el sistema**
@@ -203,10 +92,10 @@ app.post('/query', async (req, res) => {
 
 ---
 
-## 4. Arquitectura del Sistema
+## 3. Arquitectura del Sistema
 El sistema sigue una arquitectura de servicio de un solo módulo donde los tres paradigmas de programación colaboran en una cadena de procesamiento bien definida.
 
-### 4.1 Diagrama de Flujo de una Solicitud
+### 3.1 Diagrama de Flujo de una Solicitud
 El siguiente diagrama describe el ciclo de vida de una consulta desde que el cliente la envía hasta que recibe la respuesta:
 ```text
 ┌──────────────┐     POST /query      ┌─────────────────────────┐
@@ -240,7 +129,7 @@ El siguiente diagrama describe el ciclo de vida de una consulta desde que el cli
        └──────────────────────────────────────────┘
 ```
 
-### 4.2 Componentes del Sistema
+### 3.2 Componentes del Sistema
 
 | Componente | Tecnología | Responsabilidad |
 | :--- | :--- | :--- |
@@ -250,14 +139,57 @@ El siguiente diagrama describe el ciclo de vida de una consulta desde que el cli
 | **Base de Conocimiento**| Prolog (.pl) | Almacenar hechos y reglas del dominio de contratos |
 | **Capa Asíncrona** | async/await + Promises | Manejar I/O no bloqueante y ejecución concurrente |
 
-### 4.3 Interacción entre Paradigmas
+### 3.3 Interacción entre Paradigmas
 La arquitectura del sistema aprovecha las fortalezas de cada paradigma de forma complementaria:
 * **El paradigma asíncrono** maneja la capa de transporte: recepción de solicitudes HTTP concurrentes, lectura del archivo de la base de conocimiento y entrega de respuestas sin bloquear el event loop.
 * **El paradigma funcional** actúa como capa de transformación: funciones puras convierten la entrada del cliente a un formato adecuado para el motor lógico, y la salida del motor a un JSON estructurado para el cliente.
 * **El paradigma lógico** implementa el dominio del negocio: toda la lógica de contratos, penalizaciones y reglas de inferencia se expresa de forma declarativa en Prolog, separando el "qué" del "cómo".
 
-### 4.4 Decisiones de Diseño
+### 3.4 Decisiones de Diseño
 * **Sin base de datos externa:** La base de conocimiento es un archivo `.pl` cargado en memoria por cada consulta, lo que simplifica el despliegue y facilita la comprensión del paradigma lógico.
 * **Stateless por solicitud:** Cada petición crea su propia sesión Prolog, garantizando aislamiento y evitando efectos secundarios entre solicitudes.
 * **Máximo de soluciones configurable:** El parámetro `max_solutions` permite al cliente controlar el límite de respuestas, evitando la generación infinita en consultas muy generales.
 * **Manejo de errores por capas:** Los errores de Prolog (sintaxis, inferencia) se distinguen de los errores de I/O, retornando mensajes descriptivos al cliente.
+
+---
+
+## 4. Ejemplo de Ejecución
+
+A continuación, se detalla el flujo de una consulta real enviada al servicio utilizando Postman.
+
+### 4.1 Petición del Cliente
+Se realiza una petición de tipo `POST` al endpoint `/query`. En el cuerpo de la petición (JSON), se envía la consulta lógica para preguntar "A cuáles contratos aplica penalización".
+
+**Consulta:** `penalty_applicable(X).`
+
+![image1](/docs/assets/image1.png)
+![image2](/docs/assets/image2.png)
+![image3](/docs/assets/image3.png)
+![image4](/docs/assets/image4.png)
+
+### 4.2 Procesamiento en el Servidor
+El servidor recibe la petición y sigue los siguientes pasos:
+1. Extrae y normaliza el texto (asegurando que termine con el punto final exigido por Prolog).
+2. Lee el archivo `.pl` que contiene las reglas de los contratos de forma asíncrona.
+3. El intérprete Tau Prolog evalúa la base de conocimiento cargada con la petición, realizando el proceso de backtracking para encontrar todos los valores de `X` que cumplen la condición.
+
+### 4.3 Respuesta del Servicio
+El sistema empaqueta la salida en un formato JSON estándar que indica si la consulta es satisfacible, la cantidad de respuestas encontradas y las unificaciones de variables correspondientes.
+
+![image5](/docs/assets/image5.png)
+
+---
+
+## 5. Conclusiones y Extensiones
+
+### Conclusiones
+El desarrollo del Motor de Inferencia Lógica como Servicio ha demostrado que es plenamente viable y altamente productivo hacer convivir múltiples paradigmas de programación en un solo sistema. La programación lógica permite modelar el dominio (las reglas y contratos) de forma limpia y declarativa; la programación funcional aporta robustez e inmutabilidad en la transformación y serialización de los datos; y la programación asíncrona facilita un alto nivel de concurrencia al manejar la capa HTTP sin bloqueos de red. 
+
+Esta arquitectura modular y "stateless" (sin estado entre peticiones) asegura que el sistema sea escalable y que la lógica de negocio pueda modificarse sin necesidad de alterar el código del servidor web.
+
+### Extensiones Propuestas
+Para evolucionar el proyecto a futuro, se proponen las siguientes mejoras:
+1. **Integración con Base de Datos:** Sustituir la lectura del archivo de texto plano (`.pl`) por un gestor de base de datos relacional o almacenamiento en la nube, permitiendo administrar hechos y reglas dinámicamente sin reiniciar el servidor.
+2. **Interfaz Gráfica de Usuario (GUI):** Desarrollar un cliente visual (Frontend) donde el usuario final pueda construir consultas seleccionando opciones en lugar de escribir sintaxis Prolog y ver los resultados tabulados.
+3. **Manejo de Sesiones Stateful:** Extender la API para permitir la aserción temporal de hechos lógicos durante una sesión específica, útil para simulaciones "what-if" por cliente.
+4. **Validación de Entradas:** Implementar middlewares de seguridad para sanitizar las consultas y evitar inyecciones lógicas o consultas maliciosas que saturen el tiempo de cómputo del motor.
