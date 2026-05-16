@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Motor de Inferencia Lógica</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f4efe5;
+      --panel: rgba(255, 252, 246, 0.88);
+      --panel-strong: #fffaf0;
+      --border: rgba(91, 56, 24, 0.16);
+      --text: #2a2117;
+      --muted: #6f5a48;
+      --accent: #b6542f;
+      --accent-dark: #8c3f20;
+      --accent-soft: #f0c9b4;
+      --ok: #1e7a4d;
+      --error: #aa2e2e;
+      --shadow: 0 20px 60px rgba(74, 45, 18, 0.12);
+      --radius: 22px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(182, 84, 47, 0.16), transparent 28%),
+        radial-gradient(circle at right center, rgba(170, 121, 66, 0.18), transparent 24%),
+        linear-gradient(135deg, #f8f2e9 0%, #efe0c8 100%);
+    }
+
+    .shell {
+      width: min(1180px, calc(100% - 32px));
+      margin: 32px auto;
+      padding: 28px;
+      border: 1px solid var(--border);
+      border-radius: 30px;
+      background: rgba(255, 249, 241, 0.74);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+    }
+
+    .hero {
+      display: grid;
+      gap: 18px;
+      grid-template-columns: 1.35fr 0.95fr;
+      align-items: start;
+      margin-bottom: 24px;
+    }
+
+    .hero-card,
+    .card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel);
+      padding: 22px;
+      box-shadow: 0 10px 30px rgba(56, 34, 14, 0.06);
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--accent-dark);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-size: 0.74rem;
+      font-weight: 700;
+    }
+
+    h1, h2 {
+      margin: 0 0 12px;
+      line-height: 1.06;
+    }
+
+    h1 {
+      font-size: clamp(2.2rem, 4vw, 4rem);
+      max-width: 12ch;
+    }
+
+    h2 {
+      font-size: 1.2rem;
+    }
+
+    p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .hero-copy {
+      display: grid;
+      gap: 18px;
+    }
+
+    .stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .stat {
+      min-width: 135px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: var(--panel-strong);
+      border: 1px solid var(--border);
+    }
+
+    .stat strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 1.35rem;
+      color: var(--accent-dark);
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: #fff;
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: #c7b8a9;
+    }
+
+    .status-dot.ok {
+      background: var(--ok);
+    }
+
+    .status-dot.error {
+      background: var(--error);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 18px;
+    }
+
+    .stack {
+      display: grid;
+      gap: 18px;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    button,
+    input,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      border-radius: 14px;
+      padding: 12px 16px;
+      cursor: pointer;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 20px rgba(88, 43, 21, 0.12);
+    }
+
+    .primary {
+      background: var(--accent);
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .secondary {
+      background: #fff;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .ghost {
+      background: rgba(255, 255, 255, 0.7);
+      color: var(--accent-dark);
+      border: 1px solid rgba(182, 84, 47, 0.2);
+    }
+
+    .example-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .example-btn {
+      background: #fff7f2;
+      border: 1px solid rgba(182, 84, 47, 0.22);
+      color: var(--accent-dark);
+    }
+
+    form {
+      display: grid;
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    label {
+      display: grid;
+      gap: 8px;
+      font-weight: 600;
+    }
+
+    textarea,
+    input {
+      width: 100%;
+      border: 1px solid var(--border);
+      background: #fffdfa;
+      border-radius: 16px;
+      padding: 14px 16px;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    textarea {
+      min-height: 130px;
+      resize: vertical;
+    }
+
+    textarea:focus,
+    input:focus {
+      border-color: rgba(182, 84, 47, 0.5);
+      box-shadow: 0 0 0 4px rgba(182, 84, 47, 0.12);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 160px;
+      gap: 12px;
+    }
+
+    pre {
+      margin: 0;
+      overflow: auto;
+      padding: 16px;
+      border-radius: 18px;
+      background: #22160f;
+      color: #fdf4ea;
+      min-height: 220px;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    .facts-list {
+      list-style: none;
+      padding: 0;
+      margin: 16px 0 0;
+      display: grid;
+      gap: 10px;
+      max-height: 560px;
+      overflow: auto;
+    }
+
+    .facts-list li {
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: var(--panel-strong);
+      border: 1px solid var(--border);
+      font-family: "Consolas", "Courier New", monospace;
+      font-size: 0.94rem;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 0.94rem;
+    }
+
+    .tag {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(182, 84, 47, 0.08);
+      border: 1px solid rgba(182, 84, 47, 0.14);
+    }
+
+    .empty {
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    @media (max-width: 960px) {
+      .hero,
+      .layout,
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+
+      .shell {
+        width: min(100% - 18px, 1180px);
+        margin: 10px auto;
+        padding: 16px;
+        border-radius: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <article class="hero-card hero-copy">
+        <div>
+          <p class="eyebrow">Node.js + Express + Tau Prolog</p>
+          <h1>Motor de inferencia visualizable desde el navegador</h1>
+          <p>
+            Esta interfaz permite inspeccionar el servicio, consultar la base de conocimiento
+            y probar reglas Prolog sin salir del navegador.
+          </p>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <strong id="factsCount">--</strong>
+            <span>hechos detectados</span>
+          </div>
+          <div class="stat">
+            <strong id="examplesCount">--</strong>
+            <span>consultas sugeridas</span>
+          </div>
+          <div class="stat">
+            <strong>3000</strong>
+            <span>puerto por defecto</span>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button id="refreshAllBtn" class="primary" type="button">Actualizar panel</button>
+          <button id="loadFactsBtn" class="secondary" type="button">Recargar hechos</button>
+        </div>
+      </article>
+
+      <aside class="card">
+        <p class="eyebrow">Estado del servicio</p>
+        <h2>Salud del motor</h2>
+        <div id="healthPill" class="status-pill">
+          <span class="status-dot"></span>
+          <span id="healthText">Comprobando...</span>
+        </div>
+        <div class="meta">
+          <span class="tag" id="engineTag">Motor: --</span>
+          <span class="tag" id="timeTag">Timestamp: --</span>
+        </div>
+      </aside>
+    </section>
+
+    <section class="layout">
+      <div class="stack">
+        <article class="card">
+          <p class="eyebrow">Consultas</p>
+          <h2>Probar una regla o hecho</h2>
+          <p>Escribe una consulta Prolog. Si no agregas el punto final, el backend lo normaliza por ti.</p>
+
+          <div id="examples" class="example-grid"></div>
+
+          <form id="queryForm">
+            <label>
+              Consulta Prolog
+              <textarea id="queryInput" placeholder="Ejemplo: penalty_applicable(X)."></textarea>
+            </label>
+
+            <div class="form-row">
+              <label>
+                Máximo de soluciones
+                <input id="maxSolutionsInput" type="number" min="1" max="100" value="20">
+              </label>
+
+              <div class="actions" style="align-items: end;">
+                <button class="primary" type="submit">Ejecutar</button>
+                <button id="clearBtn" class="ghost" type="button">Limpiar</button>
+              </div>
+            </div>
+          </form>
+        </article>
+
+        <article class="card">
+          <p class="eyebrow">Respuesta</p>
+          <h2>Resultado de inferencia</h2>
+          <pre id="resultBox">Ejecuta una consulta para ver aquí la respuesta JSON del servicio.</pre>
+        </article>
+      </div>
+
+      <article class="card">
+        <p class="eyebrow">Base de conocimiento</p>
+        <h2>Hechos cargados</h2>
+        <p>Estos hechos se obtienen desde el endpoint <code>/facts</code>.</p>
+        <ul id="factsList" class="facts-list">
+          <li class="empty">Cargando hechos...</li>
+        </ul>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    const factsCountEl = document.getElementById('factsCount');
+    const examplesCountEl = document.getElementById('examplesCount');
+    const healthPillEl = document.getElementById('healthPill');
+    const healthTextEl = document.getElementById('healthText');
+    const engineTagEl = document.getElementById('engineTag');
+    const timeTagEl = document.getElementById('timeTag');
+    const examplesEl = document.getElementById('examples');
+    const queryFormEl = document.getElementById('queryForm');
+    const queryInputEl = document.getElementById('queryInput');
+    const maxSolutionsInputEl = document.getElementById('maxSolutionsInput');
+    const resultBoxEl = document.getElementById('resultBox');
+    const factsListEl = document.getElementById('factsList');
+    const refreshAllBtn = document.getElementById('refreshAllBtn');
+    const loadFactsBtn = document.getElementById('loadFactsBtn');
+    const clearBtn = document.getElementById('clearBtn');
+
+    const setJson = (value) => {
+      resultBoxEl.textContent = JSON.stringify(value, null, 2);
+    };
+
+    const setHealth = (isOk, text, engine = '--', timestamp = '--') => {
+      const dot = healthPillEl.querySelector('.status-dot');
+      dot.classList.remove('ok', 'error');
+      dot.classList.add(isOk ? 'ok' : 'error');
+      healthTextEl.textContent = text;
+      engineTagEl.textContent = `Motor: ${engine}`;
+      timeTagEl.textContent = `Timestamp: ${timestamp}`;
+    };
+
+    const loadServiceInfo = async () => {
+      const response = await fetch('/api');
+      if (!response.ok) {
+        throw new Error('No se pudo cargar la información del servicio.');
+      }
+
+      const data = await response.json();
+      const examples = Array.isArray(data.example_queries) ? data.example_queries : [];
+      examplesCountEl.textContent = String(examples.length);
+      examplesEl.innerHTML = '';
+
+      examples.forEach((item) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'example-btn';
+        button.textContent = item.query;
+        button.addEventListener('click', () => {
+          queryInputEl.value = item.query;
+          queryInputEl.focus();
+        });
+        examplesEl.appendChild(button);
+      });
+    };
+
+    const loadHealth = async () => {
+      try {
+        const response = await fetch('/health');
+        if (!response.ok) {
+          throw new Error('Respuesta inesperada del endpoint /health.');
+        }
+
+        const data = await response.json();
+        setHealth(
+          data.status === 'ok',
+          data.status === 'ok' ? 'Servicio disponible' : 'Servicio con incidencias',
+          data.engine || '--',
+          data.timestamp || '--'
+        );
+      } catch (error) {
+        setHealth(false, error.message);
+      }
+    };
+
+    const loadFacts = async () => {
+      factsListEl.innerHTML = '<li class="empty">Cargando hechos...</li>';
+
+      try {
+        const response = await fetch('/facts');
+        if (!response.ok) {
+          throw new Error('No se pudieron recuperar los hechos.');
+        }
+
+        const data = await response.json();
+        const facts = Array.isArray(data.facts) ? data.facts : [];
+        factsCountEl.textContent = String(facts.length);
+
+        if (!facts.length) {
+          factsListEl.innerHTML = '<li class="empty">No se encontraron hechos en la base de conocimiento.</li>';
+          return;
+        }
+
+        factsListEl.innerHTML = '';
+        facts.forEach((fact) => {
+          const item = document.createElement('li');
+          item.textContent = fact;
+          factsListEl.appendChild(item);
+        });
+      } catch (error) {
+        factsCountEl.textContent = '0';
+        factsListEl.innerHTML = `<li class="empty">${error.message}</li>`;
+      }
+    };
+
+    const runQuery = async (event) => {
+      event.preventDefault();
+
+      const payload = {
+        query: queryInputEl.value,
+        max_solutions: Number(maxSolutionsInputEl.value) || 20,
+      };
+
+      resultBoxEl.textContent = 'Consultando motor...';
+
+      try {
+        const response = await fetch('/query', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await response.json();
+        setJson(data);
+      } catch (error) {
+        setJson({
+          status: 'error',
+          message: 'No fue posible contactar el servicio.',
+          details: error.message,
+        });
+      }
+    };
+
+    const refreshAll = async () => {
+      await Promise.all([loadServiceInfo(), loadHealth(), loadFacts()]);
+    };
+
+    queryFormEl.addEventListener('submit', runQuery);
+    refreshAllBtn.addEventListener('click', refreshAll);
+    loadFactsBtn.addEventListener('click', loadFacts);
+    clearBtn.addEventListener('click', () => {
+      queryInputEl.value = '';
+      resultBoxEl.textContent = 'Ejecuta una consulta para ver aquí la respuesta JSON del servicio.';
+      queryInputEl.focus();
+    });
+
+    refreshAll().catch((error) => {
+      setJson({
+        status: 'error',
+        message: 'Hubo un problema al inicializar la interfaz.',
+        details: error.message,
+      });
+    });
+  </script>
+</body>
+</html>

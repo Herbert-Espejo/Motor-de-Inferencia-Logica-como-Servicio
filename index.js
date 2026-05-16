@@ -12,6 +12,30 @@ const app = express();
 app.use(express.json());
 
 const KB_PATH = path.join(__dirname, 'knowledge_base.pl');
+const PUBLIC_DIR = path.join(__dirname, 'public');
+
+app.use(express.static(PUBLIC_DIR));
+
+const SERVICE_INFO = {
+  service: 'Motor de Inferencia Lógica como Servicio',
+  version: '1.0.0',
+  endpoints: {
+    'GET /': 'Interfaz web para visualizar y probar el motor',
+    'GET /api': 'Resumen del servicio y consultas de ejemplo',
+    'POST /query': 'Ejecuta una consulta Prolog sobre la base de conocimiento',
+    'GET /facts': 'Lista todos los hechos cargados',
+    'GET /health': 'Estado del servicio',
+  },
+  example_queries: [
+    { query: 'penalty_applicable(contract1).' },
+    { query: 'penalty_applicable(X).' },
+    { query: 'at_risk(X).' },
+    { query: 'valid_contract(X).' },
+    { query: 'client_penalized(X).' },
+    { query: 'applicable_penalty_amount(X, Y).' },
+    { query: 'same_type(contract1, X).' },
+  ],
+};
 
 // ============================================================
 // CAPA FUNCIONAL: Funciones puras de transformación
@@ -225,27 +249,10 @@ app.get('/health', (req, res) => {
 });
 
 // ============================================================
-// ENDPOINT: / — Ejemplos de uso
+// ENDPOINT: /api — Resumen del servicio
 // ============================================================
-app.get('/', (req, res) => {
-  res.json({
-    service: 'Motor de Inferencia Lógica como Servicio',
-    version: '1.0.0',
-    endpoints: {
-      'POST /query': 'Ejecuta una consulta Prolog sobre la base de conocimiento',
-      'GET /facts': 'Lista todos los hechos cargados',
-      'GET /health': 'Estado del servicio',
-    },
-    example_queries: [
-      { query: 'penalty_applicable(contract1).' },
-      { query: 'penalty_applicable(X).' },
-      { query: 'at_risk(X).' },
-      { query: 'valid_contract(X).' },
-      { query: 'client_penalized(X).' },
-      { query: 'applicable_penalty_amount(X, Y).' },
-      { query: 'same_type(contract1, X).' },
-    ],
-  });
+app.get('/api', (req, res) => {
+  res.json(SERVICE_INFO);
 });
 
 // ============================================================
@@ -257,6 +264,8 @@ app.listen(PORT, () => {
   console.log(`   Motor: Tau Prolog`);
   console.log(`   Base de conocimiento: ${KB_PATH}`);
   console.log(`   Endpoints disponibles:`);
+  console.log(`     GET  http://localhost:${PORT}/`);
+  console.log(`     GET  http://localhost:${PORT}/api`);
   console.log(`     POST http://localhost:${PORT}/query`);
   console.log(`     GET  http://localhost:${PORT}/facts`);
   console.log(`     GET  http://localhost:${PORT}/health\n`);
